@@ -39,10 +39,42 @@ You should now have the following directories at the same level somewhere:
 ## Usage
 
 1. Edit `Vagrantfile` and set your `config.vm.synced_folder` path so that it points to a local relative path for a Bedrock project from #2 above.
-2. Edit `group_vars/all` and add your WordPress site(s). See [Options](#options) below for details.
-3. Optionally copy and edit `hosts.example` to `hosts` for more than the single dev host through Vagrant (since Vagrant automatically creates its own hosts inventory).
-4. Optionally add any dev hostnames to your local `/etc/hosts` file (or use the [hostsupdated plugin](https://github.com/cogitatio/vagrant-hostsupdater).
-5. Run `vagrant up`.
+2. Edit `group_vars/development` and add your WordPress site(s). See [Options](#options) below for details.
+3. Optionally add any dev hostnames to your local `/etc/hosts` file (or use the [hostsupdated plugin](https://github.com/cogitatio/vagrant-hostsupdater).
+4. Run `vagrant up`.
+
+### Servers/Environments
+
+This playbook is setup for development environments by default with its Vagrant integration. However, the following default environments are built in:
+
+* `development`
+* `staging`
+* `production`
+
+**Example** hosts and group_var files for these environment exist and should be modified as needed.
+
+Note: `hosts/development` is there for completeness sake only as Vagrant automatically generates and uses its own.
+
+Production note: the only necessary thing currently missing for full production support is setting a root password for MySQL. Right now no password is set.
+
+### Passwords
+
+There a few places you'll want to set/change passwords:
+
+* `group_vars/<environment>` - `mysql_root_password`
+* `group_vars/<environment>` - `wordpress_sites.admin_password`
+* `group_vars/<environment>` - `wordpress_sites.env.db_password`
+
+For staging/production environments, it's best to randomly generate longer passwords using something like [random.org](http://www.random.org/passwords/).
+
+You may be concerned about setting plaintext passwords in a Git repository, and you should be. Any type of server configs such as this playbook should always be in a **private** Git repository.
+
+Even then it's still best to try avoid it if possible, so you have few options:
+
+* Use [Ansible Vault](http://docs.ansible.com/playbooks_vault.html)
+* Use [Git Encrytpt](https://github.com/shadowhand/git-encrypt)
+
+Note: if you're mostly using this for development environments only, you probably don't need to worry about any of this as everything is just run locally.
 
 ### `Vagrantfile`
 
@@ -54,11 +86,11 @@ Whenever you move or copy the `Vagrantfile` somewhere else, you need to make sur
 
 By default, the example `Vagrantfile` now uses the `roots/bedrock` box. It's publicly available on the Vagrant Cloud site [here](https://vagrantcloud.com/roots/bedrock).
 
-The `roots/bedrock` box is simply the regular `ubuntu/trustry64` base box already provisioned with this playbook (except for the `wordpress-sites` role). The benefit to using this base box instead of a bare Ubuntu one is that provisioning will be much faster.
+The `roots/bedrock` box is simply the regular `ubuntu/trusty64` base box already provisioned with this playbook (except for the `wordpress-sites` role). The benefit to using this base box instead of a bare Ubuntu one is that provisioning will be much faster.
 
 Vagrant Cloud offers releases/versions for the boxes, so the `roots/bedrock` box versions will be kept in sync with this project. You can see if there's updates by running `vagrant box outdated` and update it with `vagrant box update`.
 
-Note: you can always set the box back to the base Ubuntu one if you prefer with `config.vm.box = 'ubuntu/trustry64'`
+Note: you can always set the box back to the base Ubuntu one if you prefer with `config.vm.box = 'ubuntu/trusty64'`
 
 ## Options
 
@@ -94,6 +126,4 @@ All Ansible configuration is done in [YAML](http://en.wikipedia.org/wiki/YAML).
 ## Todo
 
 * Multisite: basic support is included but not yet complete. There are issues with doing a network install from scratch via WP-CLI.
-* MariaDB: there's no `root` password set yet.
 * Nginx: configuration needs more options and advanced setups like static files and subdomain multisite support.
-

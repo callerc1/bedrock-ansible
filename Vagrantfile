@@ -9,6 +9,15 @@ Vagrant.configure('2') do |config|
   config.vm.network :private_network, ip: '192.168.50.5'
   config.vm.hostname = 'example.dev'
 
+  if !Vagrant.has_plugin? 'vagrant-hostsupdater'
+    puts 'vagrant-hostsupdater missing, please install the plugin:'
+    puts 'vagrant plugin install vagrant-hostsupdater'
+  else
+    # If you have multiple sites/hosts on a single VM
+    # uncomment and add them here
+    #config.hostsupdater.aliases = %w(site2.dev)
+  end
+
   # adjust paths relative to Vagrantfile
   config.vm.synced_folder '../example.dev', '/srv/www/example.dev/current', owner: 'vagrant', group: 'www-data', mount_options: ['dmode=776', 'fmode=775']
 
@@ -16,7 +25,8 @@ Vagrant.configure('2') do |config|
     # adjust paths relative to Vagrantfile
     ansible.playbook = './site.yml'
     ansible.groups = {
-      'wordpress-server' => ['default']
+      'web' => ['default'],
+      'development' => ['default']
     }
     ansible.extra_vars = {
       ansible_ssh_user: 'vagrant',
@@ -25,12 +35,9 @@ Vagrant.configure('2') do |config|
     ansible.sudo = true
   end
 
-  if Vagrant.has_plugin?('vagrant-cachier')
-    config.cache.scope = :box
-
-    config.cache.synced_folder_opts = {
-      type: :nfs,
-      mount_options: ['rw', 'vers=3', 'tcp', 'nolock']
-    }
+  # Fix for slow external network connections
+  config.vm.provider :virtualbox do |vb|
+    vb.customize ['modifyvm', :id, '--natdnshostresolver1', 'on']
+    vb.customize ['modifyvm', :id, '--natdnsproxy1', 'on']
   end
 end
